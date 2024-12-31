@@ -1,4 +1,4 @@
-const sql = require('mssql');
+// const sql = require('mssql');
 const pool = require('../config/msdb');
 const Joi = require('joi');
 
