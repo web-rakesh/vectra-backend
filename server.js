@@ -25,7 +25,7 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 // Middleware
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', '*'];
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'https://abcd.wetroo.com', '*'];
 
 app.use(cors({
   origin: function (origin, callback) {
