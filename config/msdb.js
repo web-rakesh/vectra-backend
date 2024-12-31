@@ -1,4 +1,4 @@
-const sql = require('msnodesqlv8');
+// const sql = require('msnodesqlv8');
 
 // Define the connection string for your SQL Server instance
 const connectionString = 'Driver={SQL Server};Server={DESKTOP-6QK4C55\\MSSQLSERVER01};Database={vectra_db};Trusted_Connection=Yes;Encrypt=no;TrustServerCertificate=no;';
