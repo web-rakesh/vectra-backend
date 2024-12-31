@@ -97,7 +97,7 @@ app.use('/translations', translationRoutes);
 // Start server after DB connection
 const startServer = async () => {
     try {
-        // await pool.connect();
+        await pool.connect();
         console.log('Database connected successfully!');
         app.listen(port, () => {
             console.log(`Server is running on http://localhost:${port}`);
