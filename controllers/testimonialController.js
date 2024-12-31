@@ -1,34 +1,30 @@
-const pool = require('../config/msdb'); // Adjust the path to your database connection file
+const { pool, sql } = require('../config/mssdb'); 
 
 // Get all testimonials filtered by language
 exports.getAllTestimonials = async (req, res) => {
-    const language = req.query.language || 'en'; // Default to English if no language is specified
+       const language = req.query.language || 'en';
 
-    let conn;
     try {
-        conn = await pool.getConnection();
+        const conn = await pool;
 
-        // Query to fetch all testimonials for the specified language
-        const queryTestimonials = `
+        // Query to fetch all services for the specified language
+        const queryServices = `
             SELECT * FROM testimonials
-            WHERE language = ?
+            WHERE language = @Language
             ORDER BY created_at DESC;
         `;
 
-        conn.query(queryTestimonials, [language], (err, testimonials) => {
-            if (err) {
-                console.error('Error fetching testimonials:', err);
-                return res.status(500).json({ error: 'Failed to fetch testimonials' });
-            }
+        // Execute the query
+        const result = await conn.request()
+            .input('Language', sql.NVarChar, language)
+            .query(queryServices);
 
-            // Send the retrieved testimonials as the response
-            res.status(200).json({
-                success: true,
-                testimonials,
-            });
+        // Send the retrieved services as the response
+        res.status(200).json({
+            services: result.recordset,
         });
     } catch (error) {
-        console.error('Error fetching testimonials:', error);
-        res.status(500).json({ error: 'Server error fetching testimonials' });
-    } 
+        console.error('Error fetching services:', error);
+        res.status(500).json({ error: 'Failed to fetch services' });
+    }
 };
