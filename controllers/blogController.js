@@ -10,7 +10,7 @@ exports.getAllBlogs = async (req, res) => {
     const offset = (page - 1) * limit;
 
     try {
-        const conn = await pool.getConnection();
+        const conn = await pool;
 
         // Query to fetch paginated blog posts
         const queryBlogs = `
@@ -64,7 +64,7 @@ exports.getBlogBySlug = async (req, res) => {
     const { slug } = req.params;
 
     try {
-        const conn = await pool.getConnection();
+        const conn = await pool;
 
         // Use a parameterized query for MSSQL
         const queryBlog = `SELECT * FROM blog_posts WHERE slug = @Slug`;
