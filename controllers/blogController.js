@@ -1,7 +1,7 @@
 // backend/controllers/userController.js
-const pool = require('../config/msdb'); 
+const { pool, sql } = require('../config/mssdb'); 
 
-// Get all users
+// Get all blogs
 exports.getAllBlogs = async (req, res) => {
     const language = req.query.language || 'en';
     const page = parseInt(req.query.page) || 1;
@@ -15,36 +15,37 @@ exports.getAllBlogs = async (req, res) => {
         // Include language in the query
         const queryBlogs = `
             SELECT * FROM blog_posts
-            WHERE (title LIKE ? OR content LIKE ?) AND language = ?
+            WHERE (title LIKE @search OR content LIKE @search) AND language = @language
             ORDER BY created_at DESC
-            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`;
+            OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
 
-        conn.query(queryBlogs, [`%${search}%`, `%${search}%`, language, offset, limit], (err, blogs) => {
-            if (err) {
-                console.error('Error fetching blogs:', err);
-                return res.status(500).json({ error: 'Failed to fetch blogs' });
-            }
+        const blogs = await conn.query(queryBlogs, {
+            search: `%${search}%`,
+            language,
+            offset,
+            limit,
+        });
 
-            const queryTotal = `SELECT COUNT(*) as totalCount FROM blog_posts
-                WHERE (title LIKE ? OR content LIKE ?) AND language = ?`;
-                
-            conn.query(queryTotal, [`%${search}%`, `%${search}%`, language], (err, totalRows) => {
-                if (err) {
-                    console.error('Error fetching blog count:', err);
-                    return res.status(500).json({ error: 'Failed to fetch blog count' });
-                }
+        const queryTotal = `
+            SELECT COUNT(*) as totalCount 
+            FROM blog_posts 
+            WHERE (title LIKE @search OR content LIKE @search) AND language = @language`;
 
-                const totalCount = totalRows[0].totalCount;
-                res.status(200).json({
-                    blogs,
-                    pagination: {
-                        total: totalCount,
-                        page,
-                        limit,
-                        totalPages: Math.ceil(totalCount / limit),
-                    },
-                });
-            });
+        const totalRows = await conn.query(queryTotal, {
+            search: `%${search}%`,
+            language,
+        });
+
+        const totalCount = totalRows.recordset[0].totalCount;
+
+        res.status(200).json({
+            blogs: blogs.recordset,
+            pagination: {
+                total: totalCount,
+                page,
+                limit,
+                totalPages: Math.ceil(totalCount / limit),
+            },
         });
     } catch (error) {
         console.error('Error fetching blogs:', error);
@@ -52,26 +53,23 @@ exports.getAllBlogs = async (req, res) => {
     }
 };
 
+
 // Get blog details by slug
 exports.getBlogBySlug = async (req, res) => {
     const { slug } = req.params;
     try {
         const conn = await pool.getConnection();
 
-        const queryBlog = `SELECT * FROM blog_posts WHERE slug = ?`;  // Added space before WHERE
+        // Parameterized MSSQL query
+        const queryBlog = `SELECT * FROM blog_posts WHERE slug = @slug`;
 
-        conn.query(queryBlog, [slug], (err, blog) => {
-            if (err) {
-                console.error('Error fetching blog by slug:', err);
-                return res.status(500).json({ error: 'Failed to fetch blog details' });
-            }
+        const result = await conn.query(queryBlog, { slug });
 
-            if (blog.length === 0) {
-                return res.status(404).json({ error: 'Blog not found' });
-            }
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ error: 'Blog not found' });
+        }
 
-            res.status(200).json(blog[0]);
-        });
+        res.status(200).json(result.recordset[0]);
     } catch (error) {
         console.error('Error fetching blog by slug:', error);
         res.status(500).json({ error: 'Failed to fetch blog details' });
